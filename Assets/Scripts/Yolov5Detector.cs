@@ -99,17 +99,24 @@ namespace Assets.Scripts
 
             for (int i = 0; i < OUTPUT_ROWS; i++)
             {
-                float confidence = GetConfidence(tensor, i);
+                float confidence = Sigmoid(tensor[0, 0, 4, i]);
                 if (confidence < thresholdMax)
                     continue;
 
-                BoundingBoxDimensions dimensions = ExtractBoundingBoxDimensionsYolov5(tensor, i);
-                (int classIdx, float maxClass) = GetClassIdx(tensor, i);
+				(int classIdx, float maxClass) = GetClassIdx(tensor, i);
 
                 float maxScore = confidence * maxClass;
 
                 if (maxScore < thresholdMax)
                     continue;
+
+                BoundingBoxDimensions dimensions = new BoundingBoxDimensions
+				{
+					X = tensor[0, 0, 0, i],
+					Y = tensor[0, 0, 1, i],
+					Width = tensor[0, 0, 2, i],
+					Height = tensor[0, 0, 3, i]
+				};
 
                 boxes.Add(new BoundingBox
                 {
@@ -135,8 +142,7 @@ namespace Assets.Scripts
 
         private float GetConfidence(Tensor tensor, int row)
         {
-            float tConf = tensor[0, 0, 4, row];
-            return Sigmoid(tConf);
+            return Sigmoid(tensor[0, 0, 4, row]);
         }
 
         private ValueTuple<int, float> GetClassIdx(Tensor tensor, int row)

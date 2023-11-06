@@ -50,13 +50,13 @@ public class PhoneCamera : MonoBehaviour
         for (int i = 0; i < devices.Length; i++)
         {
             if (!devices[i].isFrontFacing)
-                cameraTexture = new WebCamTexture(devices[i].name, 640, 480);
+                cameraTexture = new WebCamTexture(devices[i].name, WINDOW_SIZE, WINDOW_SIZE);
         }
 
         if (cameraTexture == null)
         {
             if (devices.Length != 0)
-                cameraTexture = new WebCamTexture(devices[0].name, 640, 480);
+                cameraTexture = new WebCamTexture(devices[0].name, WINDOW_SIZE, WINDOW_SIZE);
             else
             {
                 isCamera = false;
@@ -65,14 +65,33 @@ public class PhoneCamera : MonoBehaviour
             
         }
 
-        cameraTexture.Play();
-        //bckg.texture = cameraTexture;
         float ratio = ((RectTransform)background.transform).rect.width / 640;
         boxContainer.transform.localScale = new Vector2(ratio, ratio);
 
-        isCamera = true;
-		ProcessImg();
-		
+		float scaleY = cameraTexture.videoVerticallyMirrored ? -1f : 1f;
+		bckg.rectTransform.localScale = new Vector3(1f, scaleY, 1f);
+
+		int orient = -cameraTexture.videoRotationAngle;
+		bckg.rectTransform.localEulerAngles = new Vector3(0, 0, orient);
+
+		//ProcessImg();
+
+	}
+	public void UseCamera()
+	{
+		isCamera = true;
+		cameraTexture.Play();
+		bckg.texture = cameraTexture;
+
+	}
+	public void OffCamera()
+	{
+		if(isCamera == true)
+		{
+			cameraTexture.Stop();
+			bckg.texture = null;
+			isCamera = false;
+		}
 	}
 	public void ProcessImg()
 	{
@@ -109,47 +128,46 @@ public class PhoneCamera : MonoBehaviour
 		});
 	}
     // Update is called once per frame
-    void FixedUpdate()
+    void Update()
     {
         if (!isCamera)
             return;
 
-        float ratio = (float)cameraTexture.width / (float)cameraTexture.height;
-        fit.aspectRatio = ratio;
-
-        float scaleY = cameraTexture.videoVerticallyMirrored ? -1f : 1f;
-        bckg.rectTransform.localScale = new Vector3(1f, scaleY, 1f);
-
-        int orient = -cameraTexture.videoRotationAngle;
-        bckg.rectTransform.localEulerAngles = new Vector3(0, 0, orient);
-
-		//Texture2D newTex = (Texture2D)bckg.texture;
+		Texture2D tx2d = new Texture2D(cameraTexture.width, cameraTexture.height);
+		// Gets all color data from web cam texture and then Sets that color data in texture2d
+		tx2d.SetPixels(cameraTexture.GetPixels());
+		// Applying new changes to texture2d
+		tx2d.Apply();
 		
-  //      //WebCamTexture newTexture = (WebCamTexture)bckg.texture;
-  //      //Debug.Log(bckg.texture.width + " " + bckg.texture.height);
+		RenderTexture rt = new RenderTexture(WINDOW_SIZE, WINDOW_SIZE, 24);
+		RenderTexture.active = rt;
+		Graphics.Blit(tx2d, rt);
+		Texture2D result = new Texture2D(WINDOW_SIZE, WINDOW_SIZE);
+		result.ReadPixels(new Rect(0, 0, WINDOW_SIZE, WINDOW_SIZE), 0, 0);
+		result.Apply();
 
-  //      StartCoroutine(yolov5Detector.Detect(newTex.GetPixels32(), newTex.width, boxes =>
-  //      {
-  //          Resources.UnloadUnusedAssets();
-            
-  //          foreach(Transform child in boxContainer.transform)
-  //          {
-  //              Destroy(child.gameObject);
-  //          }
+		yolov5Detector.Detect(result.GetPixels32(), result.width, boxes =>
+		{
+			Resources.UnloadUnusedAssets();
 
-  //          for (int i = 0; i < boxes.Count; i++)
-  //          {
-  //              Debug.Log(boxes[i].ToString());
-  //              GameObject newBox = Instantiate(boxPrefab);
-  //              newBox.name = boxes[i].Label + " " + boxes[i].Confidence;
-  //              newBox.GetComponent<Image>().color = boxes[i].Label == "QR" ? colorTag1 : (boxes[i].Label == "ArUco" ? colorTag2 : colorTag3);
-  //              newBox.transform.parent = boxContainer.transform;
-  //              newBox.transform.localPosition = new Vector3(boxes[i].Rect.x - WINDOW_SIZE/2, boxes[i].Rect.y - WINDOW_SIZE/2);
-  //              newBox.transform.localScale = new Vector2(boxes[i].Rect.width/100, boxes[i].Rect.height/100);
-  //          }
-  //      }));
+			foreach (Transform child in boxContainer.transform)
+			{
+				Destroy(child.gameObject);
+			}
 
-        CountFps();
+			for (int i = 0; i < boxes.Count; i++)
+			{
+				Debug.Log(boxes[i].ToString());
+				GameObject newBox = Instantiate(boxPrefab);
+				newBox.name = boxes[i].Label + " " + boxes[i].Confidence;
+				newBox.GetComponent<Image>().color = boxes[i].Label == "QR" ? colorTag1 : (boxes[i].Label == "ArUco" ? colorTag2 : colorTag3);
+				newBox.transform.SetParent(boxContainer.transform);
+				newBox.transform.localPosition = new Vector3(boxes[i].Rect.x - WINDOW_SIZE / 2, boxes[i].Rect.y - WINDOW_SIZE / 2);
+				newBox.transform.localScale = new Vector2(boxes[i].Rect.width / 100, boxes[i].Rect.height / 100);
+			}
+		});
+
+		CountFps();
 
     }
 
