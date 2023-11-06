@@ -34,11 +34,15 @@ namespace Assets.Scripts
             this.labels = Regex.Split(this.labelsFile.text, "\n|\r|\r\n")
                 .Where(s => !String.IsNullOrEmpty(s)).ToArray();
             var model = ModelLoader.Load(this.modelFile); 
-
+			
 			this.worker = WorkerFactory.CreateWorker(WorkerFactory.Type.ComputePrecompiled, model);
         }
-
-        public void Detect(Color32[] picture, int width, System.Action<IList<BoundingBox>> callback)
+		public void OnDestroy()
+		{
+			
+			this.worker.Dispose();
+		}
+		public void Detect(Color32[] picture, int width, System.Action<IList<BoundingBox>> callback)
         {
             using (var tensor = TransformInput(picture, IMAGE_SIZE, IMAGE_SIZE, width))
             {
@@ -55,7 +59,15 @@ namespace Assets.Scripts
                 var boxes = FilterBoundingBoxes(results, OBJECTS_LIMIT, MINIMUM_CONFIDENCE);
 				//Debug.Log(boxes[0].Rect);
                 callback(boxes);
-            }
+
+				//clear the keys
+				foreach (var key in inputs.Keys)
+				{
+					inputs[key].Dispose();
+				}
+
+				inputs.Clear();
+			}
         }
 
         private static Tensor TransformInput(Color32[] pic, int width, int height, int requestedWidth)
