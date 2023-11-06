@@ -87,7 +87,7 @@ public class PhoneCamera : MonoBehaviour
 		//WebCamTexture newTexture = (WebCamTexture)bckg.texture;
 		//Debug.Log(bckg.texture.width + " " + bckg.texture.height);
 
-		StartCoroutine(yolov5Detector.Detect(result.GetPixels32(), result.width, boxes =>
+		yolov5Detector.Detect(result.GetPixels32(), result.width, boxes =>
 		{
 			Resources.UnloadUnusedAssets();
 
@@ -106,7 +106,7 @@ public class PhoneCamera : MonoBehaviour
 				newBox.transform.localPosition = new Vector3(boxes[i].Rect.x - WINDOW_SIZE / 2, boxes[i].Rect.y - WINDOW_SIZE / 2);
 				newBox.transform.localScale = new Vector2(boxes[i].Rect.width / 100, boxes[i].Rect.height / 100);
 			}
-		}));
+		});
 	}
     // Update is called once per frame
     void FixedUpdate()

@@ -10,7 +10,7 @@ using UnityEngine;
 
 namespace Assets.Scripts
 {
-    public class Yolov5Detector : MonoBehaviour, Detector
+    public class Yolov5Detector : MonoBehaviour
     {
         public string INPUT_NAME;
 
@@ -33,18 +33,22 @@ namespace Assets.Scripts
         {
             this.labels = Regex.Split(this.labelsFile.text, "\n|\r|\r\n")
                 .Where(s => !String.IsNullOrEmpty(s)).ToArray();
-            var model = ModelLoader.Load(this.modelFile);
-            this.worker = GraphicsWorker.GetWorker(model);
+            var model = ModelLoader.Load(this.modelFile); 
+
+			this.worker = WorkerFactory.CreateWorker(WorkerFactory.Type.ComputePrecompiled, model);
         }
 
-        public IEnumerator Detect(Color32[] picture, int width, System.Action<IList<BoundingBox>> callback)
+        public void Detect(Color32[] picture, int width, System.Action<IList<BoundingBox>> callback)
         {
             using (var tensor = TransformInput(picture, IMAGE_SIZE, IMAGE_SIZE, width))
             {
-                var inputs = new Dictionary<string, Tensor>();
+				Debug.Log("transformInputDone");
+				var inputs = new Dictionary<string, Tensor>();
                 inputs.Add(INPUT_NAME, tensor);
-				yield return StartCoroutine(worker.StartManualSchedule(inputs));
-                var output = worker.PeekOutput("output0");
+				//yield return StartCoroutine(worker.StartManualSchedule(inputs));
+				worker.Execute(inputs);
+				var output = worker.PeekOutput("output0");
+				Debug.Log("workerThreadDone");
                 var results = ParseYoloV5Output(output, MINIMUM_CONFIDENCE);
 				Debug.Log(results.Count);
 
