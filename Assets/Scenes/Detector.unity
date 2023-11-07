@@ -291,7 +291,6 @@ GameObject:
   - component: {fileID: 223974227}
   - component: {fileID: 223974230}
   - component: {fileID: 223974229}
-  - component: {fileID: 223974228}
   m_Layer: 5
   m_Name: Background
   m_TagString: Untagged
@@ -319,20 +318,6 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 640, y: 640}
   m_Pivot: {x: 0.5, y: 0.5}
---- !u!114 &223974228
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 223974226}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 86710e43de46f6f4bac7c8e50813a599, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  m_AspectMode: 3
-  m_AspectRatio: 1.33
 --- !u!114 &223974229
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -562,7 +547,7 @@ MonoBehaviour:
   colorTag2: {r: 0, g: 0.93333334, b: 0.058243435, a: 0.54509807}
   colorTag3: {r: 0.93333334, g: 0.16456647, b: 0, a: 0.4745098}
   bckg: {fileID: 223974229}
-  fit: {fileID: 223974228}
+  fit: {fileID: 0}
   yolov5Detector: {fileID: 40919615}
   boxContainer: {fileID: 1288361795}
   boxPrefab: {fileID: 5347304568407062166, guid: efb33e49a6005c544b4a82223b9e2a13, type: 3}
