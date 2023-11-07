@@ -46,18 +46,13 @@ namespace Assets.Scripts
         {
             using (var tensor = TransformInput(picture, IMAGE_SIZE, IMAGE_SIZE, width))
             {
-				Debug.Log("transformInputDone");
 				var inputs = new Dictionary<string, Tensor>();
                 inputs.Add(INPUT_NAME, tensor);
 				//yield return StartCoroutine(worker.StartManualSchedule(inputs));
 				worker.Execute(inputs);
 				var output = worker.PeekOutput("output0");
-				Debug.Log("workerThreadDone");
                 var results = ParseYoloV5Output(output, MINIMUM_CONFIDENCE);
-				Debug.Log(results.Count);
-
                 var boxes = FilterBoundingBoxes(results, OBJECTS_LIMIT, MINIMUM_CONFIDENCE);
-				//Debug.Log(boxes[0].Rect);
                 callback(boxes);
 
 				//clear the keys
@@ -99,12 +94,11 @@ namespace Assets.Scripts
 
             for (int i = 0; i < OUTPUT_ROWS; i++)
             {
-                float confidence = Sigmoid(tensor[0, 0, 4, i]);
-                if (confidence < thresholdMax)
+                if (tensor[0, 0, 4, i] < thresholdMax)
                     continue;
 
 				(int classIdx, float maxClass) = GetClassIdx(tensor, i);
-
+                float confidence = (tensor[0, 0, 4, i]);
                 float maxScore = confidence * maxClass;
 
                 if (maxScore < thresholdMax)
@@ -173,10 +167,10 @@ namespace Assets.Scripts
         {
             return new BoundingBoxDimensions
             {
-                X = (boxDimensions.X) * (IMAGE_SIZE / IMAGE_SIZE),
-                Y = (boxDimensions.Y) * (IMAGE_SIZE / IMAGE_SIZE),
-                Width = boxDimensions.Width * (IMAGE_SIZE / IMAGE_SIZE),
-                Height = boxDimensions.Height * (IMAGE_SIZE / IMAGE_SIZE),
+                X = (boxDimensions.X),
+                Y = (boxDimensions.Y),
+                Width = boxDimensions.Width,
+                Height = boxDimensions.Height,
             };
         }
 

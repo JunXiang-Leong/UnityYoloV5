@@ -12,7 +12,6 @@ public class PhoneCamera : MonoBehaviour
     private WebCamTexture cameraTexture;
     private Texture bckgDefault;
     private static Texture2D boxOutlineTexture;
-    public GameObject rects;
 
     public Color colorTag1 = new Color(0.3843137f, 0, 0.9333333f, 0.1f);
     public Color colorTag2 = new Color(0.3843137f, 0, 0.9333333f, 0.1f);
@@ -24,14 +23,13 @@ public class PhoneCamera : MonoBehaviour
     public GameObject boxContainer;
     public GameObject boxPrefab;
     public GameObject background;
-    public TextMeshProUGUI text;
 
     public int WINDOW_SIZE = 416;
 
     private int framesCount = 0;
     private float timeCount = 0.0f;
     private float refreshTime = 1.0f;
-    public float fps = 0.0f;
+
 
 
     // Start is called before the first frame update
@@ -93,19 +91,8 @@ public class PhoneCamera : MonoBehaviour
 			isCamera = false;
 		}
 	}
-	public void ProcessImg()
+	void RunDetection(Texture2D result)
 	{
-		Texture2D newTex = (Texture2D)bckg.texture;
-		RenderTexture rt = new RenderTexture(WINDOW_SIZE, WINDOW_SIZE, 24);
-		RenderTexture.active = rt;
-		Graphics.Blit(newTex, rt);
-		Texture2D result = new Texture2D(WINDOW_SIZE, WINDOW_SIZE);
-		result.ReadPixels(new Rect(0, 0, WINDOW_SIZE, WINDOW_SIZE), 0, 0);
-		result.Apply();
-
-		//WebCamTexture newTexture = (WebCamTexture)bckg.texture;
-		//Debug.Log(bckg.texture.width + " " + bckg.texture.height);
-
 		yolov5Detector.Detect(result.GetPixels32(), result.width, boxes =>
 		{
 			Resources.UnloadUnusedAssets();
@@ -120,12 +107,25 @@ public class PhoneCamera : MonoBehaviour
 				Debug.Log(boxes[i].ToString());
 				GameObject newBox = Instantiate(boxPrefab);
 				newBox.name = boxes[i].Label + " " + boxes[i].Confidence;
-				newBox.GetComponent<Image>().color = boxes[i].Label == "QR" ? colorTag1 : (boxes[i].Label == "ArUco" ? colorTag2 : colorTag3);
+				newBox.GetComponent<Image>().color =  colorTag3;
+				newBox.GetComponentInChildren<TMPro.TextMeshProUGUI>().text = boxes[i].Confidence.ToString();
 				newBox.transform.SetParent(boxContainer.transform);
 				newBox.transform.localPosition = new Vector3(boxes[i].Rect.x - WINDOW_SIZE / 2, boxes[i].Rect.y - WINDOW_SIZE / 2);
 				newBox.transform.localScale = new Vector2(boxes[i].Rect.width / 100, boxes[i].Rect.height / 100);
 			}
 		});
+	}
+	public void ProcessImg()
+	{
+		Texture2D newTex = (Texture2D)bckg.texture;
+		RenderTexture rt = new RenderTexture(WINDOW_SIZE, WINDOW_SIZE, 24);
+		RenderTexture.active = rt;
+		Graphics.Blit(newTex, rt);
+		Texture2D result = new Texture2D(WINDOW_SIZE, WINDOW_SIZE);
+		result.ReadPixels(new Rect(0, 0, WINDOW_SIZE, WINDOW_SIZE), 0, 0);
+		result.Apply();
+
+		RunDetection(result);
 	}
     // Update is called once per frame
     void Update()
@@ -146,46 +146,7 @@ public class PhoneCamera : MonoBehaviour
 		result.ReadPixels(new Rect(0, 0, WINDOW_SIZE, WINDOW_SIZE), 0, 0);
 		result.Apply();
 
-		yolov5Detector.Detect(result.GetPixels32(), result.width, boxes =>
-		{
-			Resources.UnloadUnusedAssets();
+		RunDetection(result);
+	}
 
-			foreach (Transform child in boxContainer.transform)
-			{
-				Destroy(child.gameObject);
-			}
-
-			for (int i = 0; i < boxes.Count; i++)
-			{
-				Debug.Log(boxes[i].ToString());
-				GameObject newBox = Instantiate(boxPrefab);
-				newBox.name = boxes[i].Label + " " + boxes[i].Confidence;
-				newBox.GetComponent<Image>().color = boxes[i].Label == "QR" ? colorTag1 : (boxes[i].Label == "ArUco" ? colorTag2 : colorTag3);
-				newBox.transform.SetParent(boxContainer.transform);
-				newBox.transform.localPosition = new Vector3(boxes[i].Rect.x - WINDOW_SIZE / 2, boxes[i].Rect.y - WINDOW_SIZE / 2);
-				newBox.transform.localScale = new Vector2(boxes[i].Rect.width / 100, boxes[i].Rect.height / 100);
-			}
-		});
-
-		CountFps();
-
-    }
-
-    private void CountFps()
-    {
-		//QualitySettings.vSyncCount = 1;
-		if (timeCount < refreshTime)
-        {
-            timeCount += Time.deltaTime;
-            framesCount += 1;
-        }
-        else
-        {
-            fps = 1/Time.deltaTime;
-            //Debug.Log("FPS: " + fps);
-            text.text = "FPS: " + fps;
-            framesCount = 0;
-            timeCount = 0.0f;
-        }
-    }
 }
